@@ -2,5 +2,5 @@
 
 * [Overview](README.md)
 * [Architecture Guide](technical-architecture.md)
-* [Full Technical Architecture](../AMPLIDEX_TECHNICAL_ARCHITECTURE.md)
+* [Full Technical Architecture](full-technical-architecture.md)
 * [Production Readiness & Evidence](production-readiness-and-evidence.md)
