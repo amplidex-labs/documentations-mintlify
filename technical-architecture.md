@@ -1,4 +1,4 @@
-# Architecture Guide
+# AmpliDex Technical Architecture
 
 ## 1. Purpose and scope
 
@@ -12,7 +12,7 @@ The production design has five goals:
 4. preserve permissionless exits and liquidation wherever safe; and
 5. allow EVM users to access Stellar-native positions without introducing backend custody.
 
-The first production release covers public positions, isolated pools, bounded execution, resilient pricing, liquidation, indexing, governance, and operations. EVM smart accounts, CCTP flows, and zero-knowledge confidentiality are staged extensions and must pass independent security gates before activation.
+The production release covers public positions, isolated pools, bounded execution, resilient pricing, liquidation, indexing, governance, and operations. EVM smart accounts, CCTP flows, and zero-knowledge confidentiality are staged extensions and must pass independent security gates before activation.
 
 ## 2. Scope and maturity
 
