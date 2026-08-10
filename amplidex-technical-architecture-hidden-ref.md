@@ -1,4 +1,8 @@
-# AmpliDex Technical Architecture
+---
+hidden: true
+---
+
+# AmpliDex Technical Architecture - Hidden Ref
 
 ### 1. Purpose and Scope
 
@@ -31,6 +35,8 @@ The core production design covers:
 
 USDC serves as the primary protocol quote and reporting denomination. Individual markets may additionally support borrowable non-USDC assets where required for short exposure.
 
+***
+
 ### 2. Scope and Maturity
 
 #### 2.1 Capability Register
@@ -56,11 +62,11 @@ The architecture describes the intended production system. A capability appearin
 
 “MVP validated” reflects implementation or validation claims associated with the current project scope. Before external production claims are made, each relevant capability must be linked to verifiable evidence such as a repository release, deployed contract ID, automated test report, transaction record, review artifact, or reproducible build.
 
-For canonical release status and supporting artifacts, see [**Production Readiness & Evidence**](production-readiness-and-evidence.md).
+For canonical release status and supporting artifacts, see **Production Readiness & Evidence**.
 
-#### 2.2 Release Non-Goals
+#### 2.2 Initial-Release Non-Goals
 
-The production release does not target:
+The initial production release does not target:
 
 * replicated leveraged-position state across multiple chains;
 * arbitrary user-supplied DEX contracts;
@@ -74,67 +80,87 @@ The production release does not target:
 * unreviewed automatic contract upgrades; or
 * hidden socialization of bad debt across unrelated markets.
 
+***
+
 ## 3. System Context
 
 ```mermaid
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Inter, Arial, sans-serif",
+    "fontSize": "17px",
+    "primaryTextColor": "#111827",
+    "lineColor": "#64748B",
+    "clusterBkg": "#FFFFFF",
+    "clusterBorder": "#CBD5E1"
+  },
+  "flowchart": {
+    "htmlLabels": true,
+    "curve": "basis",
+    "nodeSpacing": 42,
+    "rankSpacing": 52,
+    "padding": 14
+  }
+}}%%
+
 flowchart TB
 
 subgraph CLIENTS["Users & Integrators"]
-    direction LR
-    U["Stellar Users"]
-    EVMU["EVM Users"]
-    LP["Liquidity Providers"]
-    LB["Liquidation Buyers"]
-    AG["Agents / Integrators"]
+direction LR
+U["Stellar Users"]
+EVMU["EVM Users"]
+LP["Liquidity Providers"]
+LB["Liquidation Buyers"]
+AG["Agents / Integrators"]
 end
 
 subgraph ACCESS["Access Layer"]
-    direction LR
-    UI["Web / Mobile"]
-    SDK["AmpliDex SDK"]
-    RPC["Stellar RPC"]
+direction LR
+UI["Web / Mobile"]
+SDK["AmpliDex SDK"]
+RPC["Stellar RPC"]
 end
 
-subgraph PROTOCOL["AmpliDex Protocol - Soroban"]
-    direction TB
+subgraph PROTOCOL["AmpliDex Protocol · Soroban"]
+direction TB
+CORE["AmpliDex Core"]
 
-    CORE["AmpliDex Core"]
+subgraph SERVICES["Protocol Services"]
+direction LR
+POOL["Isolated<br/>Lending Pools"]
+EXEC["Execution<br/>Router"]
+ORACLE["Oracle<br/>Router"]
+LIQ["Liquidation<br/>Engine"]
+end
 
-    subgraph SERVICES["Protocol Services"]
-        direction LR
-        POOL["Isolated Lending Pools"]
-        EXEC["Execution Router"]
-        ORACLE["Oracle Router"]
-        LIQ["Liquidation Engine"]
-    end
-
-    CORE --> POOL
-    CORE --> EXEC
-    CORE --> ORACLE
-    CORE --> LIQ
+CORE --> POOL
+CORE --> EXEC
+CORE --> ORACLE
+CORE --> LIQ
 end
 
 subgraph EXTERNAL["Execution & Pricing"]
-    direction LR
-    AQ["Aquarius"]
-    SS["Soroswap"]
-    O1["Primary Reference Source"]
-    O2["Secondary Reference Source"]
+direction LR
+AQ["Aquarius"]
+SS["Soroswap"]
+O1["Primary<br/>Reference Source"]
+O2["Secondary<br/>Reference Source"]
 end
 
 subgraph DATA["Indexing & Automation"]
-    direction LR
-    IDX["Event Indexer"]
-    DB[("PostgreSQL")]
-    API["Query API"]
-    KEEP["Independent Keepers"]
+direction LR
+IDX["Event Indexer"]
+DB[("PostgreSQL")]
+API["Query API"]
+KEEP["Independent<br/>Keepers"]
 end
 
 subgraph STAGED["Staged Cross-Chain Access"]
-    direction LR
-    EW["EVM Wallet"]
-    SA["Soroban Smart Account"]
-    CCTP["Circle CCTP V2"]
+direction LR
+EW["EVM Wallet"]
+SA["Soroban<br/>Smart Account"]
+CCTP["Circle CCTP V2"]
 end
 
 U --> UI
@@ -153,21 +179,22 @@ ORACLE --> O1
 ORACLE --> O2
 
 CORE -->|"Events"| IDX
-
 IDX --> DB
 DB --> API
 DB --> KEEP
 
-API -.->|"Discovery / History"| UI
-KEEP -->|"Submit Operations"| RPC
+API -.->|"Discovery / history"| UI
+KEEP -->|"Submit operations"| RPC
 
 EVMU -.-> EW
-EW -.->|"Authorized Control"| SA
-SA -.->|"Scoped Invocation"| CORE
-CCTP -.->|"Native USDC Transport"| SA
+EW -.->|"Authorized control"| SA
+SA -.->|"Scoped invocation"| CORE
+CCTP -.->|"Native USDC transport"| SA
 ```
 
 The authoritative financial state remains on Stellar. Off-chain systems improve discovery, monitoring, transaction preparation, and automation but cannot redefine balances, debt, position health, or liquidation eligibility.
+
+***
 
 ### 3.1 Trust Boundaries
 
@@ -180,7 +207,7 @@ The authoritative financial state remains on Stellar. Off-chain systems improve 
 | Oracle adapters   | Reference observations                              | Sole pricing authority when stale or divergent            |
 | Indexer / API     | Discovery, history, analytics                       | Authoritative balances or liquidation eligibility         |
 | Keepers           | Candidate discovery and transaction submission      | Deciding whether a position is liquidatable               |
-| Frontend / SDK    | Transaction construction, simulation, signing flow  | Contract-level validation                                 |
+| Frontend / SDK    | Transaction construction, simulation, signing flow  | Weakening contract-level validation                       |
 | CCTP              | Native USDC transport                               | Synchronizing AmpliDex debt or position state             |
 | Smart accounts    | Scoped user-authorized Soroban execution            | Protocol governance or custody outside user authorization |
 
@@ -190,7 +217,7 @@ The authoritative financial state remains on Stellar. Off-chain systems improve 
 
 #### Single settlement domain
 
-Liquidity, debt, positions, fees, and liquidations settle on Stellar/Soroban.
+Liquidity, debt, positions, fees, and liquidations settle on Stellar.
 
 #### On-chain authority; off-chain acceleration
 
@@ -227,6 +254,8 @@ A failure in a DEX, oracle, keeper, indexer, RPC provider, bridge, or staged ext
 #### Measurable operations
 
 Safety-relevant signals have explicit metrics, owners, alert thresholds, and runbooks.
+
+***
 
 ## 5. On-Chain Architecture
 
@@ -266,20 +295,23 @@ Liquidation Engine
 Extensions
 ├── Smart Account Factory
 ├── EVM-controlled Soroban account
-└── CCTP ingress / egress integration
+├── CCTP ingress / egress integration
+└── ZK verifier / commitments
 ```
 
 Accounting that shares critical invariants remains atomic within the authoritative protocol state transition.
 
 External integrations are isolated behind narrow interfaces.
 
-Whether routers or subsystems are implemented as separately deployed contracts or internal contract modules is a deployment decision. Authorization boundaries, upgrade boundaries, storage ownership, and failure assumptions are documented in either case.
+Whether routers or subsystems are implemented as separately deployed contracts or internal contract modules is a deployment decision. Authorization boundaries, upgrade boundaries, storage ownership, and failure assumptions must be documented in either case.
+
+***
 
 ### 5.2 Canonical Records
 
 ```
 GlobalConfig
-protocol version, governance roles, guardian
+protocol version, governance roles, guardian, fee recipient
 
 MarketConfig(asset)
 status, caps, margin parameters, routes, oracle policy
@@ -325,6 +357,8 @@ Every deployed release records:
 * deployment configuration; and
 * governance authorization transaction.
 
+***
+
 ### 5.3 Market Configuration
 
 Each market defines:
@@ -368,6 +402,8 @@ route_slippage <= protocol_maximum_slippage
 ```
 
 Configuration changes may not retroactively mutate existing user balances, LP shares, or recognized debt.
+
+***
 
 ## 6. Economic Model
 
@@ -424,6 +460,8 @@ The economic specification must explicitly define:
 * behavior when losses reduce the LP exchange rate.
 
 The interface must distinguish **economic ownership** from **immediately withdrawable liquidity**.
+
+***
 
 ### 6.2 Debt and Interest
 
@@ -505,6 +543,8 @@ The exact implementation specifies:
 
 These are normative economic parameters, not implicit implementation details.
 
+***
+
 ### 6.3 Leverage Semantics
 
 AmpliDex uses **borrow multiplier**, not gross-exposure multiplier.
@@ -531,6 +571,8 @@ Position exposure:    5,000 USDC
 ```
 
 The contract, SDK, interface, documentation, and risk disclosures use this terminology consistently.
+
+***
 
 ### 6.4 Position State Machine
 
@@ -606,7 +648,9 @@ A partial close rejects a residual position that is:
 
 A full close repays current debt and required fees, returns eligible surplus to the owner, and permanently transitions the position to `Closed`.
 
-#### 6.5 Position Risk Calculation
+***
+
+#### 6.5 Risk Calculation
 
 Risk evaluation considers both independent reference pricing and realizable execution value.
 
@@ -705,7 +749,9 @@ The normative economic specification defines:
 * negative-value handling; and
 * behavior when no executable quote exists.
 
-The **Soroban contract**, not the indexer, keeper, query API, or frontend, makes the final solvency and liquidation determination.
+The Soroban contract, not the indexer, keeper, query API, or frontend, makes the final solvency and liquidation determination.
+
+***
 
 ## 7. Execution and Pricing
 
@@ -808,7 +854,7 @@ Material disagreement is not averaged away.
 
 Exact behavior is defined per market before activation.
 
-An oracle incident never silently substitute an unbounded spot price.
+An oracle incident must never silently substitute an unbounded spot price.
 
 ***
 
@@ -928,6 +974,8 @@ If insurance is enabled, it has explicit:
 * epoch payout limits; and
 * governance controls.
 
+***
+
 ## 9. Off-Chain Platform
 
 ### 9.1 Event Indexer
@@ -966,6 +1014,8 @@ The indexer:
 
 Indexed state is never authoritative for financial transitions.
 
+***
+
 ### 9.2 Query API
 
 The query API is:
@@ -998,6 +1048,8 @@ The API supports:
 Quote endpoints are advisory.
 
 Any transaction derived from API data is simulated and revalidated against authoritative on-chain state before signing or submission.
+
+***
 
 ### 9.3 Frontend and SDK
 
@@ -1040,7 +1092,11 @@ Generated bindings are pinned to compatible contract versions.
 
 Clients fail explicitly when connected to an unsupported protocol version.
 
+***
+
 ## 10. Cross-Chain Access
+
+> **Status:** Staged extension. Not part of the core production security boundary until independently approved.
 
 ### 10.1 EVM-Controlled Soroban Smart Accounts
 
@@ -1061,7 +1117,9 @@ Nonces are single-use.
 
 Signer rotation and recovery are explicit privileged flows with separate authorization requirements.
 
-The EVM wallet controls a **Stellar-resident account**. It does not cause AmpliDex position state to exist on an EVM chain.
+The EVM wallet controls a Stellar-resident account. It does not cause AmpliDex position state to exist on an EVM chain.
+
+***
 
 ### 10.2 Circle CCTP
 
@@ -1080,8 +1138,6 @@ The bridge and trade are separate state machines.
 Ingress:
 
 ```
-EVM user authorizes CCTP transfer
-        ↓
 Source-chain approval / burn
         ↓
 Message finality
@@ -1090,52 +1146,34 @@ Circle attestation
         ↓
 Destination mint on Stellar
         ↓
-USDC held by user-controlled Soroban account
+USDC held by user-controlled account
         ↓
-User separately authorizes AmpliDex deposit
-        ↓
-AmpliDex deposit transaction is simulated
-        ↓
-Authorized AmpliDex invocation
-        ↓
-USDC deposited into AmpliDex
+Separately simulated AmpliDex operation
 ```
 
 Egress:
 
 ```
-USDC held in AmpliDex
+User-controlled Stellar USDC
         ↓
-User authorizes AmpliDex withdrawal
+CCTP burn
         ↓
-USDC returned to user-controlled Stellar account
-        ↓
-User separately authorizes CCTP transfer
-        ↓
-CCTP burn on Stellar
-        ↓
-Message finality / attestation
+Message / attestation
         ↓
 Destination-chain mint
-        ↓
-USDC received by user-controlled destination account
 ```
 
-A successful CCTP transfer does not authorize an AmpliDex operation.
-
-After USDC is minted on Stellar, the assets remain under the control of the user's Soroban account until the user separately authorizes an AmpliDex deposit or other protocol operation.
-
-If the CCTP transfer succeeds but the subsequent AmpliDex operation is not authorized, cannot be simulated successfully, or fails during execution, the USDC remains under user control.
+If the destination mint succeeds but the AmpliDex operation fails, funds remain under user control.
 
 The user may:
 
-* retry the AmpliDex operation;
-* hold the USDC in their Soroban account;
-* transfer the USDC to another Stellar account;
-* use the USDC with another Stellar application; or
-* separately authorize a CCTP transfer to bridge the USDC to a supported destination chain.
+* retry;
+* hold;
+* transfer;
+* use another Stellar application; or
+* bridge the USDC out.
 
-Relayers may pay transaction fees or submit authorized transactions, but they never receive spending authority over the user's assets.
+Relayers may pay fees or submit transactions but never receive spending authority over the user's assets.
 
 Each supported CCTP integration release documents:
 
@@ -1143,14 +1181,87 @@ Each supported CCTP integration release documents:
 * destination domain;
 * supported chains;
 * finality assumptions;
-* message uniqueness and replay protection;
+* message uniqueness;
 * duplicate-message behavior;
 * attestation behavior;
-* retry and idempotency handling;
-* partial-completion and recovery procedures; and
+* retry handling;
+* recovery procedures; and
 * operational monitoring.
 
-## 11. Governance and Upgrade Safety
+***
+
+## 11. Confidential Positions
+
+> **Status:** Research track. Not part of the initial production security boundary.
+
+Confidentiality requires commitment-based state and proof-constrained transitions.
+
+Encrypted frontend state alone is insufficient.
+
+Candidate private fields may include:
+
+* collateral;
+* debt;
+* leverage;
+* entry price;
+* position holdings; and
+* margin.
+
+Fields that may remain public include:
+
+* market;
+* protocol version;
+* state version;
+* commitment;
+* proof-policy identifier; and
+* nullifier state.
+
+A valid proof must bind the relevant transition to:
+
+* Stellar network;
+* protocol contract;
+* position ID;
+* previous commitment;
+* operation;
+* new commitment;
+* nonce or nullifier;
+* oracle inputs; and
+* validity window.
+
+Private-mode circuits must preserve the same economic invariants as public positions, including:
+
+* ownership;
+* debt conservation;
+* collateral accounting;
+* solvency;
+* fees;
+* position-state transitions; and
+* liquidation requirements.
+
+The staged research path is:
+
+1. private intent or commit-reveal;
+2. confidential position state; and
+3. additional execution-privacy research.
+
+AmpliDex makes no claim of complete transaction anonymity while token transfers, DEX interaction, transaction timing, or access patterns remain observable.
+
+Proof-system selection is based on measured:
+
+* Soroban verifier cost;
+* proof size;
+* browser proving time;
+* browser memory;
+* setup assumptions;
+* tooling maturity;
+* test-vector quality; and
+* auditability.
+
+Production activation requires dedicated review of both circuit logic and verifier implementation.
+
+***
+
+## 12. Governance and Upgrade Safety
 
 Production control consists of:
 
@@ -1159,7 +1270,7 @@ Production control consists of:
 * narrowly scoped emergency guardian; and
 * minimized deployment authority.
 
-### 11.1 Role Boundaries
+### 12.1 Role Boundaries
 
 | **Role**               | **May Perform**                                                                                             | **May Not Perform**                                                       |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
@@ -1171,7 +1282,7 @@ Production control consists of:
 
 ***
 
-### 11.2 Emergency States
+### 12.2 Emergency States
 
 Granular emergency modes include:
 
@@ -1202,7 +1313,7 @@ Emergency-state transitions:
 
 ***
 
-### 11.3 Upgrade Process
+### 12.3 Upgrade Process
 
 Production upgrades follow:
 
@@ -1230,9 +1341,11 @@ Critical governance and upgrade roles use threshold or multisig custody with har
 
 Key rotation procedures are documented and tested.
 
-## 12. Security Model
+***
 
-### 12.1 Critical Invariants
+## 13. Security Model
+
+### 13.1 Critical Invariants
 
 Critical invariants include:
 
@@ -1258,20 +1371,21 @@ Critical invariants include:
 
 ***
 
-### 12.2 Threats and Controls
+### 13.2 Threats and Controls
 
-| **Threat**                        | **Primary Controls**                                                                 | **Failure Response**                                      |
-| --------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------- |
-| DEX manipulation / low liquidity  | Independent price checks, route allowlist, caps, slippage bounds, liquidity floors   | Restrict route or market; use conservative close path     |
-| Oracle compromise / staleness     | Multiple sources, freshness checks, deviation bounds, circuit breakers               | Stop new risk; enter predefined degraded mode             |
-| Insolvency from volatility        | Conservative margins, caps, liquidation incentive, keeper diversity                  | Explicit bad-debt recognition and isolated loss           |
-| Flash-loan / composability attack | End-state validation, conservative pricing, bounded routes, safe invocation ordering | Reject invalid transaction and investigate economic path  |
-| Malicious token / adapter         | Asset review, adapter allowlist, balance-delta verification                          | Disable affected integration and isolate market           |
-| Keeper outage / censorship        | Permissionless submission, multiple operators, direct buyers                         | Alert and activate independent fallback operators         |
-| Governance compromise             | Multisig, timelock, narrow guardian, published hashes                                | Pause new exposure and rotate compromised authority       |
-| Smart-account replay              | Full domain separation, nonce, expiry, invocation scope                              | Disable staged access path without affecting native users |
-| Indexer / RPC corruption          | Reconciliation, redundant providers, on-chain revalidation                           | Mark data stale and fail transaction preparation safely   |
-| CCTP partial completion           | Explicit state machine, idempotency, user-controlled destination                     | Recovery workflow and independent status verification     |
+| **Threat**                        | **Primary Controls**                                                                 | **Failure Response**                                        |
+| --------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| DEX manipulation / low liquidity  | Independent price checks, route allowlist, caps, slippage bounds, liquidity floors   | Restrict route or market; use conservative close path       |
+| Oracle compromise / staleness     | Multiple sources, freshness checks, deviation bounds, circuit breakers               | Stop new risk; enter predefined degraded mode               |
+| Insolvency from volatility        | Conservative margins, caps, liquidation incentive, keeper diversity                  | Explicit bad-debt recognition and isolated loss             |
+| Flash-loan / composability attack | End-state validation, conservative pricing, bounded routes, safe invocation ordering | Reject invalid transaction and investigate economic path    |
+| Malicious token / adapter         | Asset review, adapter allowlist, balance-delta verification                          | Disable affected integration and isolate market             |
+| Keeper outage / censorship        | Permissionless submission, multiple operators, direct buyers                         | Alert and activate independent fallback operators           |
+| Governance compromise             | Multisig, timelock, narrow guardian, published hashes                                | Pause new exposure and rotate compromised authority         |
+| Smart-account replay              | Full domain separation, nonce, expiry, invocation scope                              | Disable staged access path without affecting native users   |
+| Indexer / RPC corruption          | Reconciliation, redundant providers, on-chain revalidation                           | Mark data stale and fail transaction preparation safely     |
+| CCTP partial completion           | Explicit state machine, idempotency, user-controlled destination                     | Recovery workflow and independent status verification       |
+| ZK circuit / verifier flaw        | Public fallback, staged caps, dedicated review                                       | Disable confidential mode without changing public positions |
 
 All financial arithmetic uses:
 
@@ -1286,9 +1400,11 @@ External token callbacks and re-entrant invocation paths are treated as hostile.
 
 Authorization and state transitions follow safe checks/effects/interactions ordering where applicable.
 
-## 13. Verification and Assurance
+***
 
-### 13.1 Test Strategy
+## 14. Verification and Assurance
+
+### 14.1 Test Strategy
 
 #### Unit tests
 
@@ -1407,7 +1523,7 @@ Operational drills are included where relevant.
 
 ***
 
-### 13.2 CI Requirements
+### 14.2 CI Requirements
 
 CI blocks merge on applicable failures in:
 
@@ -1426,7 +1542,7 @@ Coverage is treated as a supporting signal, not a substitute for invariant, prop
 
 ***
 
-### 13.3 Independent Review
+### 14.3 Independent Review
 
 Independent security review is scoped by subsystem.
 
@@ -1440,8 +1556,9 @@ Required review domains include:
 * oracle integrations;
 * governance;
 * upgrade and emergency authorization;
-* EVM smart-account authentication before activation; and
-* CCTP recovery and integration behavior before cross-chain launch.
+* EVM smart-account authentication before activation;
+* CCTP recovery and integration behavior before cross-chain launch; and
+* circuits and verifier logic before confidential-mode activation.
 
 Critical and high-severity findings are resolved and retested before unrestricted activation.
 
@@ -1454,9 +1571,11 @@ Published security evidence should identify:
 * retest status; and
 * accepted residual risk where applicable.
 
-## 14. Reliability, Observability, and Operations
+***
 
-### 14.1 Service Objectives
+## 15. Reliability, Observability, and Operations
+
+### 15.1 Service Objectives
 
 Targets are validated under production-shaped load and failure testing.
 
@@ -1472,7 +1591,9 @@ Targets are validated under production-shaped load and failure testing.
 
 These values are operational targets and may evolve based on production measurements.
 
-### 14.2 Metrics
+***
+
+### 15.2 Metrics
 
 Operational metrics include:
 
@@ -1546,7 +1667,7 @@ Where staged CCTP access is enabled:
 
 ***
 
-### 14.3 Alerts and Runbooks
+### 15.3 Alerts and Runbooks
 
 Alerts define:
 
@@ -1579,7 +1700,9 @@ Runbooks cover at minimum:
 
 High-severity scenarios are rehearsed before increasing protocol risk caps.
 
-### 14.4 Operational Security
+***
+
+### 15.4 Operational Security
 
 Secrets are stored in managed secret systems.
 
@@ -1600,7 +1723,7 @@ Restore procedures are tested rather than merely documented.
 
 ***
 
-## 15. Deployment and Release
+## 16. Deployment and Release
 
 The production release process follows:
 
@@ -1673,17 +1796,210 @@ Release artifacts include:
 
 Canonical release evidence is maintained in **Production Readiness & Evidence**.
 
-## 16. Architecture Decisions
+***
+
+## 17. Delivery Roadmap and Verification Milestones
+
+### M1 — Core Hardening
+
+**Scope**
+
+* formal economic specification;
+* accounting invariants;
+* expanded unit/property/fuzz tests;
+* governance roles;
+* storage-version strategy; and
+* migration tooling.
+
+**Evidence**
+
+* CI reports;
+* invariant suite;
+* reproducible testnet artifact;
+* economic test vectors; and
+* independent core review.
+
+***
+
+### M2 — Data and Operations
+
+**Scope**
+
+* canonical events;
+* replayable indexer;
+* query API;
+* reconciliation;
+* dashboards;
+* alerts; and
+* runbooks.
+
+**Evidence**
+
+* replay demo;
+* reconciliation report;
+* load tests;
+* backup/restore test; and
+* indexer recovery evidence.
+
+***
+
+### M3 — Execution and Pricing
+
+**Scope**
+
+* Execution Router;
+* Aquarius adapter;
+* Soroswap adapter;
+* reference-price router;
+* executable-price validation;
+* circuit breakers; and
+* degraded-mode logic.
+
+**Evidence**
+
+* execution failure tests;
+* route fallback tests;
+* stale-price tests;
+* divergent-price tests;
+* adapter review; and
+* production-route verification.
+
+***
+
+### M4 — Liquidation
+
+**Scope**
+
+* deterministic liquidation eligibility;
+* liquidation quotes;
+* direct buyer settlement;
+* keeper redundancy;
+* liquidation races; and
+* explicit bad-debt accounting.
+
+**Evidence**
+
+* threshold tests;
+* race tests;
+* testnet settlement transactions;
+* keeper-failure drill; and
+* bad-debt test vectors.
+
+***
+
+### M5 — Capped Production
+
+**Scope**
+
+* reviewed release;
+* governance timelock;
+* production monitoring;
+* capped mainnet markets;
+* vulnerability disclosure; and
+* bug-bounty readiness.
+
+**Evidence**
+
+* deployment manifest;
+* contract IDs;
+* WASM hashes;
+* security review and remediation links;
+* live operational dashboards; and
+* canary report.
+
+***
+
+### M6 — Cross-Chain Access
+
+**Scope**
+
+* EVM-controlled Soroban account;
+* smart-account factory;
+* CCTP ingress;
+* CCTP egress;
+* relayer integration where applicable; and
+* recovery UX.
+
+**Evidence**
+
+* authentication review;
+* replay-protection suite;
+* domain-separation tests;
+* CCTP recovery tests; and
+* end-to-end cross-chain evidence.
+
+***
+
+### M7 — Confidentiality Research
+
+**Scope**
+
+* privacy threat model;
+* proof-system benchmarks;
+* commitment model;
+* circuit prototypes;
+* verifier prototype; and
+* metadata-leakage analysis.
+
+**Evidence**
+
+* benchmark report;
+* public test vectors;
+* verifier-cost measurements; and
+* dedicated audit before any production activation.
+
+Each completed milestone should map implementation claims to immutable, independently inspectable evidence.
+
+***
+
+## 18. Production Readiness
+
+Production readiness is treated as a separately evidenced release state rather than an architectural assumption.
+
+A market must satisfy applicable gates covering:
+
+* economics;
+* critical invariants;
+* stateful fuzzing;
+* rounding and decimal safety;
+* migrations;
+* DEX integration;
+* oracle behavior;
+* degraded modes;
+* liquidation;
+* keeper liveness;
+* indexing;
+* reconciliation;
+* backups;
+* governance;
+* key management;
+* security review;
+* monitoring;
+* incident response;
+* disclosure;
+* bug bounty;
+* reproducible deployment artifacts; and
+* conservative canary operation.
+
+Cross-chain access and confidential positions have independent approval gates and do not inherit approval from the core protocol.
+
+For the complete launch checklist, current evidence status, contract identifiers, artifact hashes, review links, and deployment records, see **Production Readiness & Evidence**.
+
+***
+
+## 19. Architecture Decisions
 
 ### ADR-001 — Stellar Is the Sole Financial Settlement Domain
 
 **Decision**
 
-Liquidity, debt, LP shares, positions, liquidation, and protocol settlement remain authoritative on Stellar/Soroban.
+Liquidity, debt, LP shares, positions, liquidation, and protocol settlement remain authoritative on Stellar.
 
 **Rationale**
 
 Avoids fragmented solvency and cross-chain position-state synchronization.
+
+***
 
 ### ADR-002 — CCTP Transports USDC, Not Protocol State
 
@@ -1693,7 +2009,9 @@ CCTP is used for native USDC movement only.
 
 **Rationale**
 
-Contains cross-chain failure and preserves user recovery without introducing cross-chain debt synchronization
+Contains cross-chain failure and preserves user recovery without introducing cross-chain debt synchronization.
+
+***
 
 ### ADR-003 — The Indexer Is Non-Authoritative
 
@@ -1705,15 +2023,19 @@ Indexed state is used for discovery, history, monitoring, and analytics.
 
 Protocol solvency remains independent of backend availability and database correctness.
 
+***
+
 ### ADR-004 — Execution Routes Are Governed and Bounded
 
 **Decision**
 
-Protocol assets execute only through registered adapters and approved routes.
+Protocol-managed assets execute only through registered adapters and approved routes.
 
 **Rationale**
 
 Prevents arbitrary external invocation and unbounded routing risk.
+
+***
 
 ### ADR-005 — Material Oracle Disagreement Restricts Risk
 
@@ -1725,6 +2047,8 @@ Meaningfully conflicting observations trigger restricted operation instead of au
 
 Avoids manufacturing false confidence from inconsistent pricing inputs.
 
+***
+
 ### ADR-006 — Direct Liquidation With Keeper Automation
 
 **Decision**
@@ -1734,6 +2058,8 @@ Liquidation is permissionless, with keepers providing automation rather than exc
 **Rationale**
 
 Broadens participation and improves liveness without creating a trusted liquidation operator.
+
+***
 
 ### ADR-007 — EVM Users Control Soroban Smart Accounts
 
@@ -1745,7 +2071,21 @@ External wallet identity is translated into scoped Soroban account authorization
 
 Provides EVM access without introducing backend custody or moving AmpliDex state to EVM chains.
 
-### ADR-008 — Markets Are Isolated by Configuration and Loss Domain
+***
+
+### ADR-008 — Confidentiality Is Staged and Opt-In
+
+**Decision**
+
+Private-position functionality is developed independently of the public core protocol.
+
+**Rationale**
+
+Separates reviewed public economics from the additional risk introduced by circuits, proofs, and confidential state.
+
+***
+
+### ADR-009 — Markets Are Isolated by Configuration and Loss Domain
 
 **Decision**
 
@@ -1755,7 +2095,9 @@ Pools, caps, routes, pricing policies, emergency states, and losses are bounded 
 
 Limits contagion and makes protocol risk easier to measure and control.
 
-### ADR-009 — Off-Chain Services Accelerate but Do Not Authorize
+***
+
+### ADR-010 — Off-Chain Services Accelerate but Do Not Authorize
 
 **Decision**
 
@@ -1765,7 +2107,97 @@ Keepers, indexers, APIs, relayers, and interfaces may prepare and submit actions
 
 Ensures availability failures or infrastructure compromise do not redefine protocol ownership or solvency.
 
-## Appendix A — Glossary
+***
+
+## 20. Repository and Documentation Topology
+
+A production repository may follow:
+
+```
+amplidex/
+│
+├── contracts/
+│   ├── core/
+│   ├── execution-router/
+│   ├── oracle-router/
+│   ├── liquidation/
+│   ├── smart-account/
+│   └── verifier/
+│
+├── packages/
+│   ├── sdk/
+│   ├── bindings/
+│   └── shared-types/
+│
+├── apps/
+│   ├── web/
+│   ├── api/
+│   ├── indexer/
+│   └── keeper/
+│
+├── circuits/
+│   └── confidential-position/
+│
+├── deployments/
+│   ├── testnet/
+│   └── public/
+│
+├── docs/
+│   ├── architecture/
+│   ├── adr/
+│   ├── economics/
+│   ├── security/
+│   ├── operations/
+│   └── runbooks/
+│
+└── tests/
+    ├── unit/
+    ├── property/
+    ├── fuzz/
+    ├── integration/
+    └── end-to-end/
+```
+
+Normative economic rules live in a versioned economic specification.
+
+Operational instructions live in runbooks.
+
+Significant architectural changes receive ADRs.
+
+Immutable network-specific deployment facts live in deployment manifests and the evidence register rather than being duplicated throughout mutable architecture documentation.
+
+This document remains the system-level architecture map.
+
+***
+
+## Appendix A — Reviewer Questions
+
+A technical reviewer should be able to answer the following from the architecture and linked evidence:
+
+1. Where are authoritative cash, debt, LP shares, and position state stored?
+2. What rounding rules apply to asset, share, debt, and fee conversions?
+3. Can an unavailable DEX route increase risk?
+4. Can an unavailable or divergent oracle create new risk?
+5. Can any privileged role arbitrarily move user funds?
+6. Can any privileged role bypass the timelock?
+7. What prevents a healthy position from being liquidated?
+8. How are liquidation quotes bounded against stale state?
+9. Which isolated loss domain absorbs bad debt?
+10. How is bad debt reported?
+11. Can a user repay or close when a primary external dependency fails?
+12. How does the indexer rebuild from chain history?
+13. How is indexed state reconciled against contract state?
+14. Which implementation evidence supports each claim of “implemented,” “validated,” “audited,” or “production-ready”?
+15. What measurable condition allows a launch cap to increase?
+16. What happens if a CCTP mint succeeds but an AmpliDex action fails?
+17. Can an EVM authorization replay across accounts, contracts, networks, or versions?
+18. Can confidential mode be disabled without affecting public positions?
+19. Which actor is responsible for each high-severity operational alert?
+20. Can protocol solvency continue to be evaluated if AmpliDex backend services are unavailable?
+
+***
+
+## Appendix B — Glossary
 
 #### Borrow Multiplier
 
@@ -1828,6 +2260,12 @@ Circle Cross-Chain Transfer Protocol, used by AmpliDex staged cross-chain access
 
 A Soroban account contract that authorizes transactions according to defined authentication and authorization rules.
 
+#### Position Commitment
+
+A cryptographic commitment representing confidential position state without publicly exposing all underlying values.
+
+***
+
 ## Conclusion
 
 AmpliDex is designed as a Stellar-native leveraged credit and execution protocol.
@@ -1836,4 +2274,6 @@ Isolated liquidity pools fund borrowing. Borrowed capital creates bounded long o
 
 Cross-chain access is deliberately limited to user-controlled account authorization and asset transport. AmpliDex debt and position state remain authoritative on Stellar.
 
-Production readiness is demonstrated through reproducible artifacts, invariant and adversarial testing, independent review, conservative deployment, measurable operations, and published evidence.
+Confidentiality is treated as a separately reviewed extension rather than a prerequisite for the public protocol.
+
+Production readiness is demonstrated through reproducible artifacts, invariant and adversarial testing, independent review, conservative deployment, measurable operations, and published evidence—not by architecture language alone.
