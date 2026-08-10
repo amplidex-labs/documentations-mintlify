@@ -184,8 +184,6 @@ The authoritative financial state remains on Stellar. Off-chain systems improve 
 | CCTP              | Native USDC transport                               | Synchronizing AmpliDex debt or position state             |
 | Smart accounts    | Scoped user-authorized Soroban execution            | Protocol governance or custody outside user authorization |
 
-***
-
 ## 4. Architecture Principles
 
 #### Single settlement domain
@@ -810,8 +808,6 @@ Exact behavior is defined per market before activation.
 
 An oracle incident never silently substitute an unbounded spot price.
 
-***
-
 ## 8. Liquidation and Bad Debt
 
 ### 8.1 Liquidation Eligibility
@@ -821,8 +817,6 @@ Liquidation eligibility is recalculated atomically in the settlement transaction
 A keeper or liquidation buyer may identify and submit a candidate position, but cannot force a healthy position to liquidate.
 
 No off-chain service has authority to override on-chain eligibility.
-
-***
 
 ### 8.2 Liquidation Quote
 
@@ -873,8 +867,6 @@ A successful liquidation:
 4. returns any eligible residual surplus to the position owner; and
 5. marks the position as `Liquidated`.
 
-***
-
 ### 8.3 Keeper Model
 
 Keepers provide automation and liveness but are not protocol authorities.
@@ -896,8 +888,6 @@ Keeper keys:
 * can be replaced without changing protocol solvency rules.
 
 Permissionless third parties may submit valid liquidation transactions independently of AmpliDex-operated keepers.
-
-***
 
 ### 8.4 Bad Debt
 
@@ -1169,8 +1159,6 @@ Production control consists of:
 | Keeper                 | Discover and submit public protocol operations                                                              | Change configuration, upgrade contracts, or override eligibility          |
 | Indexer / API operator | Operate data infrastructure                                                                                 | Authorize financial state transitions                                     |
 
-***
-
 ### 11.2 Emergency States
 
 Granular emergency modes include:
@@ -1199,8 +1187,6 @@ Emergency-state transitions:
 * have documented entry criteria;
 * have documented exit criteria; and
 * map to operational runbooks.
-
-***
 
 ### 11.3 Upgrade Process
 
@@ -1255,8 +1241,6 @@ Critical invariants include:
 17. A failed AmpliDex operation after successful CCTP mint leaves the minted funds under user control.
 18. Privileged actors cannot arbitrarily transfer user or LP balances.
 19. Emergency modes may reduce risk but may not silently rewrite economic ownership.
-
-***
 
 ### 12.2 Threats and Controls
 
@@ -1405,8 +1389,6 @@ Pool repayment
 
 Operational drills are included where relevant.
 
-***
-
 ### 13.2 CI Requirements
 
 CI blocks merge on applicable failures in:
@@ -1423,8 +1405,6 @@ CI blocks merge on applicable failures in:
 * dependency-lock consistency.
 
 Coverage is treated as a supporting signal, not a substitute for invariant, property, state-machine, and adversarial testing.
-
-***
 
 ### 13.3 Independent Review
 
@@ -1544,8 +1524,6 @@ Where staged CCTP access is enabled:
 * unresolved transfers; and
 * recovery events.
 
-***
-
 ### 14.3 Alerts and Runbooks
 
 Alerts define:
@@ -1597,8 +1575,6 @@ Keeper credentials, CI credentials, RPC secrets, and database credentials are:
 Backups are encrypted.
 
 Restore procedures are tested rather than merely documented.
-
-***
 
 ## 15. Deployment and Release
 

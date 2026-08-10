@@ -2,9 +2,10 @@
 description: >-
   Due-diligence gates and evidence register for grants, investment review, and
   mainnet launch.
+hidden: true
 ---
 
-# Production Readiness & Evidence
+# Production Readiness & Evidence-Hidden Ref
 
 AmpliDex distinguishes between **architectural design, implemented functionality, validated functionality, and production-ready functionality**.
 
@@ -25,6 +26,8 @@ AmpliDex documentation uses the following classifications where implementation s
 | **Research**         | Experimental capability under evaluation and not part of the production security boundary.                                        |
 
 These classifications allow the technical architecture to describe the intended production system without implying that every component has already completed the same stage of development.
+
+***
 
 ### Production launch gates
 
@@ -102,6 +105,26 @@ AmpliDex will not classify the protocol as production-ready until the applicable
 * Mainnet deployment begins under conservative operating limits.
 * Criteria for increasing caps or enabling additional markets defined in advance.
 
+***
+
+### Staged capabilities
+
+Not every AmpliDex capability shares the same production-readiness boundary.
+
+Core lending, leveraged-position management, execution, pricing, repayment, and liquidation must satisfy the primary protocol launch gates before mainnet operation.
+
+Additional capabilities may be activated independently after satisfying their own security and operational requirements.
+
+In particular:
+
+**Cross-chain access** requires independent validation of bridge dependencies, message and asset settlement behavior, failure recovery, supported networks, and cross-chain account authorization.
+
+**Confidential or ZK-enabled positions** require independent verification of proof construction, verifier correctness, circuit assumptions, failure behavior, and the interaction between private state and protocol solvency requirements.
+
+A staged capability is not considered part of the production security boundary until its applicable approval gates have been completed.
+
+***
+
 ### Evidence register
 
 The evidence register provides a verifiable link between AmpliDex's technical claims and deployed implementation.
@@ -139,6 +162,8 @@ Evidence entries use four primary states:
 
 Evidence marked **Verified** should link to the underlying artifact rather than relying solely on a written assertion.
 
+***
+
 ### Milestone evidence
 
 For each significant implementation or deployment milestone, AmpliDex will publish an evidence package containing, where applicable:
@@ -153,6 +178,8 @@ For each significant implementation or deployment milestone, AmpliDex will publi
 8. a concise mapping between the milestone's technical claims and supporting evidence.
 
 This provides a traceable path from **architecture → implementation → deployment → verification → evidence**.
+
+***
 
 ### Mainnet progression
 
