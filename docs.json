@@ -9,7 +9,7 @@
     "tabs": [
       {
         "tab": "Overview",
-        "pages": ["README"]
+        "pages": ["index"]
       },
       {
         "tab": "AmpliDex Technical Architecture",
