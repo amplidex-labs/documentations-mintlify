@@ -1,0 +1,28 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "AmpliDex Documentation",
+  "colors": {
+    "primary": "#D8FF3E"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Overview",
+        "pages": ["README"]
+      },
+      {
+        "tab": "AmpliDex Technical Architecture",
+        "pages": ["technical-architecture"]
+      },
+      {
+        "tab": "Research - Selective Position Confidentiality",
+        "pages": ["research-selective-position-confidentiality"]
+      },
+      {
+        "tab": "Production Readiness & Evidence",
+        "pages": ["production-readiness-and-evidence"]
+      }
+    ]
+  }
+}
