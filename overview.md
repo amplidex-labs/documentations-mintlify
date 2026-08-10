@@ -8,9 +8,9 @@ This documentation is intended for builders, engineers, security reviewers, gran
 
 The technical architecture presented in this documentation represents the planned production system. Components that have already been implemented or validated are identified separately from functionality that remains under development.
 
-{% hint style="info" %}
+<Info>
 Before mainnet launch, AmpliDex will publish a complete evidence register containing repository tags, deployed contract IDs, audit reports, artifact hashes, test results, operational metrics, and other verifiable implementation evidence.
-{% endhint %}
+</Info>
 
 ## At a glance
 
