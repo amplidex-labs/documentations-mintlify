@@ -443,32 +443,35 @@ The contract, SDK, interface, documentation, and risk disclosures use this termi
 
 ### 6.4 Position State Machine
 
+
+
 ```mermaid
 stateDiagram-v2
+    [*] --> Open: Validated open
 
-[*] --> Open: Validated open
+    Open --> Open: Increase position
+    Open --> Open: Add margin
+    Open --> Open: Remove margin if healthy
+    Open --> Open: Repay debt
+    Open --> Open: Valid partial close
 
-Open --> Open: Increase
-Open --> Open: Add margin
-Open --> Open: Repay
-Open --> Open: Valid partial close
+    Open --> Warning: Warning threshold crossed
 
-Open --> Warning: Warning threshold crossed
-Warning --> Open: Position recovers
-Warning --> Warning: Add margin
-Warning --> Warning: Repay
-Warning --> Warning: Valid partial close
+    Warning --> Open: Position recovers
+    Warning --> Warning: Add margin
+    Warning --> Warning: Repay debt
+    Warning --> Warning: Valid partial close
 
-Open --> Liquidatable: Maintenance margin breached
-Warning --> Liquidatable: Maintenance margin breached
+    Open --> Liquidatable: Maintenance margin breached
+    Warning --> Liquidatable: Maintenance margin breached
 
-Open --> Closed: Full close
-Warning --> Closed: Full close
+    Open --> Closed: Full close and settlement
+    Warning --> Closed: Full close and settlement
 
-Liquidatable --> Liquidated: Atomic liquidation settlement
+    Liquidatable --> Liquidated: Atomic liquidation and settlement
 
-Closed --> [*]
-Liquidated --> [*]
+    Closed --> [*]: User receives collateral plus profit or minus losses
+    Liquidated --> [*]: User receives residual value after debt, losses, and fees
 ```
 
 A long position borrows USDC and acquires the market asset.
